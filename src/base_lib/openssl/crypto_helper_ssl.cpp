@@ -51,6 +51,7 @@ void CryptoHelperLinux::generateKeyPair() {
 	if (EVP_PKEY_CTX_set_dsa_paramgen_bits(ctx_params, 1024) <= 0) {
 		throw logic_error("error setting key properties");
 	}
+	EVP_PKEY_CTX_set_dsa_paramgen_md(ctx_params,EVP_sha1());
     EVP_PKEY* pkey_params = NULL;
     EVP_PKEY_paramgen(ctx_params, &pkey_params);
     EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(pkey_params, NULL);
