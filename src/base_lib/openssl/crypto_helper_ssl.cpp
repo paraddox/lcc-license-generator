@@ -12,6 +12,7 @@
 #include <openssl/pem.h>
 #include <openssl/err.h>
 #include <openssl/rsa.h>
+#include <openssl/dsa.h>
 #include <stdexcept>
 #include <string>
 #include <cstddef>
@@ -37,22 +38,30 @@ void CryptoHelperLinux::generateKeyPair() {
 		m_pktmp = nullptr;
 	}
 
-	EVP_PKEY_CTX *ctx;
+	EVP_PKEY_CTX *ctx_params;
 
-	ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, NULL);
-	if (!ctx) {
+	ctx_params = EVP_PKEY_CTX_new_id(EVP_PKEY_DSA, NULL);
+	if (!ctx_params) {
 	}
+
+
+	if (EVP_PKEY_paramgen_init(ctx_params) <= 0) {
+		throw logic_error("error paramgeninit");
+	}
+	if (EVP_PKEY_CTX_set_dsa_paramgen_bits(ctx_params, 1024) <= 0) {
+		throw logic_error("error setting key properties");
+	}
+    EVP_PKEY* pkey_params = NULL;
+    EVP_PKEY_paramgen(ctx_params, &pkey_params);
+    EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(pkey_params, NULL);
 
 	if (EVP_PKEY_keygen_init(ctx) <= 0) {
 	}
-
-	if (EVP_PKEY_CTX_set_rsa_keygen_bits(ctx, 1024) <= 0) {
-		throw logic_error("error setting key properties");
-	}
-
 	if (EVP_PKEY_keygen(ctx, &m_pktmp) <= 0) {
 		throw logic_error("error generating keypair");
 	}
+	EVP_PKEY_free(pkey_params);
+    EVP_PKEY_CTX_free(ctx_params);
 	EVP_PKEY_CTX_free(ctx);
 }
 
@@ -61,9 +70,9 @@ const string CryptoHelperLinux::exportPrivateKey() const {
 		throw logic_error(string("Export not initialized.Call generateKeyPair first."));
 	}
 	BIO *bio_private = BIO_new(BIO_s_mem());
-	RSA *rsa = EVP_PKEY_get1_RSA(m_pktmp);
+	DSA *rsa = EVP_PKEY_get1_DSA(m_pktmp);
 	// EVP_PKEY_assign_RSA(m_pktmp, rsa);
-	PEM_write_bio_RSAPrivateKey(bio_private, rsa, NULL, NULL, 0, NULL, NULL);
+	PEM_write_bio_DSAPrivateKey(bio_private, rsa, NULL, NULL, 0, NULL, NULL);
 	// RSA_free(rsa);
 	/*PEM_write_bio_PrivateKey(bio_private, m_pktmp, nullptr, nullptr, 0,
 	 nullptr, nullptr);*/
@@ -81,9 +90,9 @@ const vector<unsigned char> CryptoHelperLinux::exportPublicKey() const {
 		throw logic_error(string("Export not initialized.Call generateKeyPair first."));
 	}
 	BIO *bio_public = BIO_new(BIO_s_mem());
-	RSA *rsa = EVP_PKEY_get1_RSA(m_pktmp);
+	DSA *rsa = EVP_PKEY_get1_DSA(m_pktmp);
 	// PEM_write_bio_RSAPublicKey(bio_public, rsa);
-	i2d_RSAPublicKey_bio(bio_public, rsa);
+	i2d_DSA_PUBKEY_bio(bio_public, rsa);
 	int keylen = BIO_pending(bio_public);
 	vector<unsigned char> buffer(keylen, 0);
 	// char *pem_key = (char*) (calloc(keylen + 1, 1));
@@ -107,7 +116,7 @@ const string CryptoHelperLinux::signString(const string &license) const {
 
 	/*Initialise the DigestSign operation - SHA-256 has been selected
 	 * as the message digest function */
-	if (1 != EVP_DigestSignInit(mdctx, NULL, EVP_sha256(), NULL, m_pktmp)) {
+	if (1 != EVP_DigestSignInit(mdctx, NULL, EVP_sha1(), NULL, m_pktmp)) {
 		EVP_MD_CTX_destroy(mdctx);
 	}
 	/* Call update with the message */

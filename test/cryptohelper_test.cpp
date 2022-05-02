@@ -45,10 +45,10 @@ BOOST_AUTO_TEST_CASE(test_generate_and_sign) {
 	unique_ptr<CryptoHelper> crypto(CryptoHelper::getInstance());
 	crypto->generateKeyPair();
 	const string privateK = crypto->exportPrivateKey();
-	BOOST_CHECK_MESSAGE(boost::starts_with(privateK, "-----BEGIN RSA PRIVATE KEY-----"),
-						"Private key is in openssl pkcs#1 format");
-	const std::string signature = crypto->signString("testString");
-	BOOST_CHECK_MESSAGE(signature.size() == 172, "signature is the right size");
+	BOOST_CHECK_MESSAGE(boost::starts_with(privateK, "-----BEGIN DSA PRIVATE KEY-----"),
+						"Private key is in openssl pkcs#1 format ");
+	const std::string signature = crypto->signString("testStringmailungdecatprevedelegea");
+	BOOST_CHECK_MESSAGE(signature.size() == 100, "signature is the right size "+ signature);
 	crypto.release();
 	/*
 	 ofstream myfile("private_key-linux.rsa");
