@@ -11,7 +11,6 @@
 #include <openssl/bio.h>
 #include <openssl/pem.h>
 #include <openssl/err.h>
-#include <openssl/rsa.h>
 #include <openssl/dsa.h>
 #include <stdexcept>
 #include <string>
@@ -43,7 +42,6 @@ void CryptoHelperLinux::generateKeyPair() {
 	ctx_params = EVP_PKEY_CTX_new_id(EVP_PKEY_DSA, NULL);
 	if (!ctx_params) {
 	}
-
 
 	if (EVP_PKEY_paramgen_init(ctx_params) <= 0) {
 		throw logic_error("error paramgeninit");
